@@ -30,6 +30,7 @@ export default {
     },
     web3Client(state, payload) {
       state.web3Client = payload
+      window.web3Client = state.web3Client
     },
   },
 
@@ -57,10 +58,16 @@ export default {
       localStorage.removeItem('loggedInWith')
     },
     doLogin({ commit }, payload) {
-      if (!payload || !payload.address || !payload.loggedInWith) {
-        // console.log('User address and wallet is required for login')
+      if (
+        !payload ||
+        !payload.address ||
+        !payload.loggedInWith ||
+        !payload.web3
+      ) {
+        // console.log('web3, User address and wallet is required for login')
         return
       }
+      commit('web3Client', payload.web3)
       if (payload.address) {
         commit('address', { address: payload.address })
         commit('loggedInWith', { loggedInWith: payload.loggedInWith })
@@ -68,16 +75,14 @@ export default {
       } else {
         commit('address', { address: null })
       }
-      return null
     },
 
-    checkLogin({ state, commit, dispatch }) {
+    initweb3({ state, commit, dispatch }) {
       try {
         const web3 = new Web3(
           Web3.givenProvider ||
             Web3.providers.HttpProvider(app.uiconfig.rpc_url)
         )
-        window.web3Client = web3
         commit('web3Client', web3)
       } catch (error) {}
     },

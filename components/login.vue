@@ -1,5 +1,5 @@
 <template>
-  <nav>
+  <div>
     <button v-if="!loggedIn">
       <a title="Connect to Wallet" @click="onLogin()">
         <span>Connect to wallet</span>
@@ -7,7 +7,7 @@
     </button>
     <div v-if="loggedIn" :title="address">
       <a @click="showProfile = true">
-        <span>{{ formattedUserAddress }}</span>
+        <span>{{ address }}</span>
       </a>
     </div>
     <button v-if="loggedIn">
@@ -15,7 +15,11 @@
         <span>Logout</span>
       </a>
     </button>
-  </nav>
+    <button v-if="loggedIn" @click="showStatus()">Show Status</button>
+    <div v-if="status">
+      {{ status }}
+    </div>
+  </div>
 </template>
 
 <script>
@@ -40,16 +44,21 @@ export default
     ]),
   },
 })
-class Navbar extends Vue {
+class Login extends Vue {
   showLoginWith = false
   onboard = null
   wallet = null
   web3 = null
+  status = null
 
   async mounted() {
     const previouslySelectedWallet = localStorage.getItem('loggedInWith')
     if (previouslySelectedWallet != null) await this.onLogin()
-    // this.logout()
+  }
+
+  showStatus() {
+    this.status = this.onboard.getState()
+    // console.log(this.status)
   }
 
   async onLogin() {
@@ -67,7 +76,6 @@ class Navbar extends Vue {
         ? await this.onboard.walletSelect(previouslySelectedWallet)
         : await this.onboard.walletSelect()
     ) {
-      // await this.onboard.walletSelect()
       await this.onboard.walletCheck()
     }
   }
@@ -75,10 +83,10 @@ class Navbar extends Vue {
   async doLogin() {
     const accounts = await this.web3.eth.getAccounts()
     if (accounts && accounts.length > 0) {
-      this.$store.commit('client/web3Client', { web3Client: this.web3 })
       this.$store.dispatch('client/doLogin', {
         address: accounts[0],
         loggedInWith: this.wallet.name,
+        web3: this.web3,
       })
     }
   }
@@ -94,30 +102,17 @@ class Navbar extends Vue {
     }
   }
 
-  get formattedUserAddress() {
-    if (this.loggedIn && this.address) {
-      const start = this.address.slice(0, 6)
-      const length = this.address.length
-      const end = this.address.slice(length - 6)
-      return start + '...' + end
-    }
-    return ''
-  }
-
   async getOnboardjs() {
     const onboardConfig = {}
     if (app.uiconfig.onboard_id) onboardConfig.dappId = app.uiconfig.onboard_id
 
     return await OnBoard({
-      // dappId: app.uiconfig.onboard_id,
       networkId: parseInt(app.uiconfig.chainId),
-
       subscriptions: {
         wallet: async (wallet) => {
           await this.onboard.walletCheck()
           this.web3 = new Web3(wallet.provider)
           this.wallet = wallet
-          window.web3Client = this.web3
           this.doLogin()
         },
       },
@@ -125,25 +120,21 @@ class Navbar extends Vue {
         wallets: [
           { walletName: 'metamask', preferred: true },
           {
-            walletName: 'fortmatic',
-            apiKey: app.uiconfig.fortmatic_id,
-            preferred: true,
-          },
-          {
-            walletName: 'portis',
-            apiKey: app.uiconfig.portis_id,
-            preferred: true,
-          },
-          {
-            walletName: 'trust',
+            walletName: 'ledger',
             rpcUrl: app.uiconfig.rpc_url,
             preferred: true,
           },
+          {
+            walletName: 'trezor',
+            appUrl: 'https://app.dusd.finance',
+            email: app.uiconfig.email,
+            rpcUrl: app.uiconfig.rpc_url,
+            preferred: true,
+          },
+          { walletName: 'dapper', preferred: true },
           {
             walletName: 'walletConnect',
             infuraKey: app.uiconfig.infura_id,
-            rpcUrl: app.uiconfig.rpc_url,
-            preferred: true,
           },
           { walletName: 'coinbase' },
           {
@@ -151,11 +142,46 @@ class Navbar extends Vue {
             rpcUrl: app.uiconfig.rpc_url,
             appName: 'DefiDollar',
           },
+          {
+            walletName: 'fortmatic',
+            apiKey: app.uiconfig.fortmatic_id,
+          },
+          {
+            walletName: 'portis',
+            apiKey: app.uiconfig.portis_id,
+          },
+          {
+            walletName: 'trust',
+            rpcUrl: app.uiconfig.rpc_url,
+            preferred: true,
+          },
+          {
+            walletName: 'lattice',
+            rpcUrl: app.uiconfig.rpc_url,
+            appName: 'DefiDollar',
+          },
+          {
+            walletName: 'torus',
+            buildEnv: 'production',
+          },
           { walletName: 'squarelink', apiKey: app.uiconfig.squarelink_id },
           { walletName: 'opera' },
           { walletName: 'operaTouch' },
+          { walletName: 'status' },
+          { walletName: 'imToken', rpcUrl: app.uiconfig.rpc_url },
+          { walletName: 'meetone' },
+          { walletName: 'mykey', rpcUrl: app.uiconfig.rpc_url },
+          { walletName: 'huobiwallet', rpcUrl: app.uiconfig.rpc_url },
+          { walletName: 'hyperpay' },
+          { walletName: 'wallet.io', rpcUrl: app.uiconfig.rpc_url },
         ],
       },
+      walletCheck: [
+        { checkName: 'derivationPath' },
+        { checkName: 'accounts' },
+        { checkName: 'connect' },
+        { checkName: 'network' },
+      ],
     })
   }
 }
