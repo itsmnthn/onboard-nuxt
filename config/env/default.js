@@ -15,4 +15,5 @@ module.exports = {
   infura_id: process.env.INFURA_PROJECT_ID,
   rpc_url: `https://${process.env.NETWORK}.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
   squarelink_id: process.env.SQUARELINK_ID,
+  email: process.env.EMAIL,
 }
